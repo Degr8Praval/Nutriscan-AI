@@ -284,6 +284,59 @@ def record_food_entry(
     return entry
 
 
+def record_food_entries(
+    entries: list[dict[str, Any]], db_path: str | Path = DEFAULT_DB_PATH
+) -> list[dict[str, Any]]:
+    """Save all reviewed items in one transaction, or save none of the meal."""
+    if not entries:
+        raise ValueError("A meal must contain at least one food entry")
+
+    prepared: list[tuple[int, float]] = []
+    for item in entries:
+        try:
+            fdc_id = int(item["fdc_id"])
+            grams = float(item["grams"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("Each meal entry needs a USDA food ID and gram weight") from exc
+        if fdc_id <= 0 or not math.isfinite(grams) or grams <= 0:
+            raise ValueError("Food IDs and gram weights must be positive finite numbers")
+        prepared.append((fdc_id, grams))
+
+    connection = _connect(db_path)
+    try:
+        saved: list[dict[str, Any]] = []
+        with connection:
+            timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+            for fdc_id, grams in prepared:
+                food = _resolve_food("", connection, fdc_id)
+                scale = grams / 100
+                entry = {
+                    "timestamp": timestamp,
+                    "fdc_id": food["fdc_id"],
+                    "food_name": food["description"],
+                    "grams": grams,
+                    "calories": food["calories_per_100g"] * scale,
+                    "protein": food["protein_per_100g"] * scale,
+                    "carbs": food["carbs_per_100g"] * scale,
+                    "fat": food["fat_per_100g"] * scale,
+                    "source": food["source"],
+                }
+                cursor = connection.execute(
+                    """INSERT INTO daily_logs
+                       (timestamp, fdc_id, food_name, grams, calories, protein, carbs, fat, source)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    tuple(entry[key] for key in (
+                        "timestamp", "fdc_id", "food_name", "grams", "calories",
+                        "protein", "carbs", "fat", "source"
+                    )),
+                )
+                entry["id"] = cursor.lastrowid
+                saved.append(entry)
+        return saved
+    finally:
+        connection.close()
+
+
 def get_daily_totals(
     day: date | str | None = None, db_path: str | Path = DEFAULT_DB_PATH
 ) -> dict[str, Any]:
@@ -300,6 +353,22 @@ def get_daily_totals(
             (day_text,),
         ).fetchone()
     return {"date": day_text, **dict(row)}
+
+
+def get_daily_entries(
+    day: date | str | None = None, db_path: str | Path = DEFAULT_DB_PATH
+) -> list[dict[str, Any]]:
+    """Return today's saved food rows in timestamp order for the UI."""
+    day_text = (day or date.today()).isoformat() if isinstance(day, date) else (day or date.today().isoformat())
+    with _connect(db_path) as connection:
+        rows = connection.execute(
+            """SELECT id, timestamp, fdc_id, food_name, grams, calories,
+                      protein, carbs, fat, source
+               FROM daily_logs WHERE substr(timestamp, 1, 10) = ?
+               ORDER BY timestamp, id""",
+            (day_text,),
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def get_food_count(db_path: str | Path = DEFAULT_DB_PATH) -> int:

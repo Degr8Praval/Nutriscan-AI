@@ -1,0 +1,1 @@
+"""NutriScan application modules."""

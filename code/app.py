@@ -7,9 +7,19 @@ import os
 import json
 import sqlite3
 import datetime
+import hashlib
+import sys
+import tempfile
+from pathlib import Path
 import streamlit as st
 import plotly.graph_objects as go
 from PIL import Image
+
+CODE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = CODE_DIR.parent
+if str(CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(CODE_DIR))
+from vision_pipeline import extract_plate_items
 
 # 1. Page Config MUST be the very first Streamlit call
 st.set_page_config(
@@ -22,8 +32,8 @@ st.set_page_config(
 # 2. LOCAL DATA & ENGINE INITIALIZATION
 # ------------------------------------------------------------------------------
 
-DB_PATH = "food_data.db"
-RULES_PATH = "diet_rules.json"
+DB_PATH = str(PROJECT_ROOT / "food_data.db")
+RULES_PATH = str(CODE_DIR / "diet_rules.json")
 
 @st.cache_resource
 def get_diet_guard():
@@ -135,120 +145,238 @@ m4.metric("Fat", f"{total_fat:.1f} / {fat_goal} g", f"{total_fat - fat_goal:+.1f
 st.markdown("---")
 
 # ------------------------------------------------------------------------------
-# 5. MAIN NAVIGATION TABS
+# 5. IMAGE-BASED DIETARY CHECK
 # ------------------------------------------------------------------------------
 
-tab_check, tab_scan, tab_logs = st.tabs([
-    "🔍 Real-Time Food Classifier",
-    "📷 Multimodal Plate Scan",
+tab_text, tab_scan, tab_logs = st.tabs([
+    "🔍 Text food check",
+    "📷 Check a meal photo",
     "📊 Today's Intake Log"
 ])
 
-# TAB 1: INSTANT CLASSIFIER
-with tab_check:
-    st.subheader("Instant Dietary Compliance Checker")
-    st.write(f"Screening against constraint: **{selected_diet.title()}**")
-
-    col_input, col_action = st.columns([4, 1])
-    with col_input:
+with tab_text:
+    st.subheader("Text food restriction check")
+    st.write(f"Enter a food or dish to check it against your selected **{selected_diet.title()}** category.")
+    with st.form("text_food_check"):
         query_food = st.text_input(
-            "Dish name or ingredient:",
-            placeholder="e.g. Paneer Makhani, Pad Thai, Warm Roti, Almond Milk",
-            label_visibility="collapsed"
+            "Food or dish name",
+            placeholder="e.g. paneer tikka, chicken salad, almond milk",
         )
-    with col_action:
-        run_check = st.button("Audit Food", use_container_width=True, type="primary")
+        check_text = st.form_submit_button("Check food", type="primary")
 
-    if run_check and query_food.strip():
-        guard = get_diet_guard()
-        
-        with st.spinner("Evaluating food safety..."):
-            if guard is not None:
-                verdict = guard.evaluate_food(query_food, selected_diet)
-            else:
-                verdict = None
-            nutr = query_food_nutrition(query_food)
-
-        if verdict and verdict.safe:
-            st.success(f"### ✅ SAFE FOR {selected_diet.upper()}")
-        elif verdict and not verdict.safe:
-            st.error(f"### ❌ VIOLATION FLAGGED FOR {selected_diet.upper()}")
+    if check_text:
+        if not query_food.strip():
+            st.warning("Enter a food or dish name first.")
         else:
-            st.warning("Evaluated with fallback rules.")
+            guard = get_diet_guard()
+            if guard is None:
+                st.error("The dietary checker could not start. Check the local model and diet rules.")
+            else:
+                with st.spinner("Checking the food against your selected category…"):
+                    verdict = guard.evaluate_food(query_food.strip(), selected_diet)
+                    nutrition = query_food_nutrition(query_food.strip())
+                st.session_state.text_check_result = {
+                    "name": query_food.strip(),
+                    "diet": selected_diet,
+                    "verdict": verdict.to_dict(),
+                    "nutrition": nutrition,
+                }
 
-        res_col1, res_col2 = st.columns([3, 2])
-        with res_col1:
-            if verdict:
-                st.write(f"**Explanation:** {verdict.reason}")
-                st.write(f"**Engine Tier:** `{verdict.source}`")
-                st.write(f"**Confidence:** `{int(verdict.confidence * 100)}%`")
-                if verdict.flagged_ingredients:
-                    st.write(f"**Flagged Ingredients:** {', '.join(verdict.flagged_ingredients)}")
-
-        with res_col2:
-            st.caption(f"Macros per 100g (Source: {nutr.get('source', 'default')}):")
-            st.write(f"- Calories: **{nutr['calories']} kcal**")
-            st.write(f"- Protein: **{nutr['protein']}g** | Carbs: **{nutr['carbs']}g** | Fat: **{nutr['fat']}g**")
-
-        st.markdown("---")
-        log_col1, log_col2 = st.columns([2, 1])
-        with log_col1:
-            log_grams = st.slider("Portion weight (g):", 25, 500, 150, 25)
-        with log_col2:
-            st.write("")
-            if st.button("➕ Add to Daily Log", use_container_width=True):
-                scale = log_grams / 100.0
+    text_result = st.session_state.get("text_check_result")
+    if text_result:
+        if text_result["diet"] != selected_diet:
+            st.info("The selected category changed. Check the food again for the new category.")
+        else:
+            verdict = text_result["verdict"]
+            nutrition = text_result["nutrition"]
+            if not verdict["safe"]:
+                st.error(f"Potential conflict with {selected_diet}: {verdict['reason']}")
+            elif verdict["source"] == "offline_fallback":
+                st.warning(f"The result could not be fully verified: {verdict['reason']}")
+            else:
+                st.success(f"No detected conflict with {selected_diet}.")
+            st.write(f"**Food:** {text_result['name']}")
+            st.write(f"**Check details:** {verdict['reason']}")
+            st.caption(f"Screening source: {verdict['source']}")
+            st.caption(
+                f"Nutrition per 100 g (source: {nutrition.get('source', 'fallback')}): "
+                f"{nutrition['calories']:.0f} kcal · {nutrition['protein']:.1f} g protein · "
+                f"{nutrition['carbs']:.1f} g carbs · {nutrition['fat']:.1f} g fat"
+            )
+            grams = st.number_input(
+                "Portion to add to today's log (g)", min_value=1, max_value=10000,
+                value=150, key="text_log_grams",
+            )
+            if st.button("Add checked food to today's log", key="add_text_food"):
+                scale = grams / 100.0
                 st.session_state.daily_logs.append({
-                    "name": query_food.title(),
-                    "grams": log_grams,
-                    "calories": round(nutr["calories"] * scale, 1),
-                    "protein": round(nutr["protein"] * scale, 1),
-                    "carbs": round(nutr["carbs"] * scale, 1),
-                    "fat": round(nutr["fat"] * scale, 1),
-                    "safe": verdict.safe if verdict else True
+                    "name": text_result["name"],
+                    "grams": grams,
+                    "calories": round(nutrition["calories"] * scale, 1),
+                    "protein": round(nutrition["protein"] * scale, 1),
+                    "carbs": round(nutrition["carbs"] * scale, 1),
+                    "fat": round(nutrition["fat"] * scale, 1),
+                    "safe": verdict["safe"],
                 })
-                st.success(f"Added {log_grams}g of {query_food.title()}!")
+                st.success("Food added to today's intake log.")
                 st.rerun()
 
-# TAB 2: MULTIMODAL SCAN
 with tab_scan:
-    st.subheader("Multimodal Meal Plate Auditor")
-    uploaded_file = st.file_uploader("Upload plate image", type=["jpg", "jpeg", "png"])
+    st.subheader("Meal photo dietary check")
+    st.write(
+        f"Upload a meal photo. NutriScan will identify visible foods and check them "
+        f"against your selected **{selected_diet.title()}** category."
+    )
+    st.caption(
+        f"Vision model: `{os.getenv('NUTRISCAN_MODEL', 'gemma4:e2b')}` · "
+        f"Ollama endpoint: `{os.getenv('OLLAMA_HOST', 'http://127.0.0.1:11434')}`"
+    )
+    uploaded_file = st.file_uploader(
+        "Upload a meal photo",
+        type=["jpg", "jpeg", "png", "webp"],
+        key="meal_photo_upload",
+    )
 
-    col_img, col_audit = st.columns([1, 1])
     if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        with col_img:
-            st.image(image, caption="Plate Snapshot", use_container_width=True)
+        try:
+            image = Image.open(uploaded_file).convert("RGB")
+            st.image(image, caption="Selected meal photo", use_container_width=True)
+        except Exception as exc:
+            st.error(f"This image could not be opened: {exc}")
+            image = None
 
-        with col_audit:
-            st.write("### AI Food Extraction")
-            c1, c2 = st.columns(2)
-            i1 = c1.text_input("Item 1", value="Grilled Chicken")
-            g1 = c2.number_input("Grams", value=150, step=25, key="g1")
+        image_bytes = uploaded_file.getvalue()
+        image_id = hashlib.sha256(image_bytes).hexdigest()
+        if st.session_state.get("scan_image_id") != image_id:
+            st.session_state.scan_image_id = image_id
+            st.session_state.scan_result = None
 
-            c3, c4 = st.columns(2)
-            i2 = c3.text_input("Item 2", value="Steamed Rice")
-            g2 = c4.number_input("Grams", value=200, step=25, key="g2")
+        if image is not None and st.button(
+            "Analyze image and check category", type="primary", use_container_width=True
+        ):
+            image_suffix = Path(uploaded_file.name).suffix.lower() or ".jpg"
+            temp_path = None
+            try:
+                with tempfile.NamedTemporaryFile(suffix=image_suffix, delete=False) as image_file:
+                    image_file.write(image_bytes)
+                    temp_path = image_file.name
 
-            if st.button("🚀 Audit & Log Plate", type="primary", use_container_width=True):
-                guard = get_diet_guard()
-                for name, g in [(i1, g1), (i2, g2)]:
-                    nutr = query_food_nutrition(name)
-                    scale = g / 100.0
-                    v = guard.evaluate_food(name, selected_diet) if guard else None
+                with st.spinner("Identifying foods in the image with the local vision model…"):
+                    extraction = extract_plate_items(temp_path)
+
+                if not extraction.success:
+                    st.session_state.scan_result = None
+                    st.error(
+                        extraction.error_message
+                        or "The vision model could not identify foods in this image."
+                    )
+                elif not extraction.items:
+                    st.session_state.scan_result = None
+                    st.warning("No foods were detected. Try a clearer photo with the plate visible.")
+                else:
+                    guard = get_diet_guard()
+                    if guard is None:
+                        st.session_state.scan_result = None
+                        st.error("The dietary checker could not start. Check the local model and diet rules.")
+                    else:
+                        results = []
+                        for item in extraction.items:
+                            verdict = guard.evaluate_food(item.name, selected_diet)
+                            nutrition = query_food_nutrition(item.name)
+                            grams = max(1, float(item.estimated_grams))
+                            scale = grams / 100.0
+                            results.append({
+                                "name": item.name,
+                                "grams": grams,
+                                "calories": round(nutrition["calories"] * scale, 1),
+                                "protein": round(nutrition["protein"] * scale, 1),
+                                "carbs": round(nutrition["carbs"] * scale, 1),
+                                "fat": round(nutrition["fat"] * scale, 1),
+                                "safe": verdict.safe,
+                                "verified": verdict.source != "offline_fallback",
+                                "reason": verdict.reason,
+                                "source": verdict.source,
+                                "nutrition_source": nutrition.get("source", "fallback"),
+                            })
+                        st.session_state.scan_result = {
+                            "image_id": image_id,
+                            "diet": selected_diet,
+                            "foods": results,
+                        }
+            except Exception as exc:
+                st.session_state.scan_result = None
+                st.error(f"Image analysis failed: {exc}")
+            finally:
+                if temp_path:
+                    Path(temp_path).unlink(missing_ok=True)
+
+    scan_result = st.session_state.get("scan_result")
+    if scan_result:
+        if scan_result["image_id"] != st.session_state.get("scan_image_id"):
+            st.info("The photo changed. Analyze the current image to refresh this result.")
+        elif scan_result["diet"] != selected_diet:
+            st.warning("Your selected category changed. Analyze the photo again to check against it.")
+        else:
+            foods = scan_result["foods"]
+            all_safe = all(food["safe"] and food["verified"] for food in foods)
+            has_conflict = any(not food["safe"] for food in foods)
+            if all_safe:
+                st.success(f"No detected food conflicts with the {selected_diet} category.")
+            elif has_conflict:
+                st.error(f"Potential {selected_diet} restriction conflict detected in this image.")
+            else:
+                st.warning(
+                    f"The {selected_diet} check could not fully verify these foods. "
+                    "Review ingredients before relying on this result."
+                )
+
+            st.dataframe(
+                [{
+                    "Detected food": food["name"],
+                    "Estimated portion": f"{food['grams']:.0f} g",
+                    "Category check": (
+                        "⚠️ Unverified" if not food["verified"]
+                        else "✅ No conflict detected" if food["safe"]
+                        else "⚠️ Review ingredients"
+                    ),
+                    "Calories (estimate)": food["calories"],
+                    "Protein (g)": food["protein"],
+                    "Carbs (g)": food["carbs"],
+                    "Fat (g)": food["fat"],
+                } for food in foods],
+                use_container_width=True,
+                hide_index=True,
+            )
+            for food in foods:
+                if not food["safe"] or not food["verified"]:
+                    st.warning(f"{food['name']}: {food['reason']}")
+            st.caption(
+                "Diet checks use detected dish names and cannot confirm hidden ingredients or "
+                "cross-contamination. Nutrition may use fallback values when a dish is absent "
+                "from food_data.db."
+            )
+
+            logged_id = st.session_state.get("logged_scan_id")
+            if logged_id == scan_result["image_id"]:
+                st.info("These detected foods have already been added to today's log.")
+            elif st.button("Add detected foods to today's log", key="log_detected_foods"):
+                for food in foods:
                     st.session_state.daily_logs.append({
-                        "name": name.title(),
-                        "grams": g,
-                        "calories": round(nutr["calories"] * scale, 1),
-                        "protein": round(nutr["protein"] * scale, 1),
-                        "carbs": round(nutr["carbs"] * scale, 1),
-                        "fat": round(nutr["fat"] * scale, 1),
-                        "safe": v.safe if v else True
+                        "name": food["name"],
+                        "grams": food["grams"],
+                        "calories": food["calories"],
+                        "protein": food["protein"],
+                        "carbs": food["carbs"],
+                        "fat": food["fat"],
+                        "safe": food["safe"],
                     })
+                st.session_state.logged_scan_id = scan_result["image_id"]
+                st.success("Detected foods added to today's intake log.")
                 st.rerun()
 
-# TAB 3: DAILY LOG & VISUALS
+# ------------------------------------------------------------------------------
+# 6. DAILY LOG & VISUALS
+# ------------------------------------------------------------------------------
 with tab_logs:
     st.subheader(f"Nutrition Log - {datetime.date.today().strftime('%B %d, %Y')}")
     if st.session_state.daily_logs:

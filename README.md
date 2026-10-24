@@ -1,38 +1,34 @@
-# NutriScan AI: Edge-Native Dietary Auditor & Nutritional Screener
+# NutriScan
 
-An edge-native, privacy-preserving multimodal dietary classifier and macro auditor designed to run locally on Apple Silicon and modern edge hardware without external cloud API dependencies.
+NutriScan is a local Streamlit prototype with a text-based dietary checker, an image-based meal checker, and an intake dashboard. The app runs locally and uses Ollama for image recognition and optional dietary reasoning.
 
----
+## Run on Windows
 
-## 🛠️ Updated Tech Stack & Dependencies
+Create the environment and install dependencies without activating PowerShell scripts:
 
-The project relies on a lightweight, offline-first stack combining deterministic rule checking, fast local ONNX vector embeddings, and an SLM (Small Language Model) fallback.
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
 
-### Python Environment
-* **Python**: `3.10` - `3.12`
+Start Ollama separately. The default image model is `gemma4:e2b`; set `NUTRISCAN_MODEL` to another installed vision-capable tag if needed. The default Ollama endpoint is `http://127.0.0.1:11434`; set `OLLAMA_HOST` if your service runs elsewhere.
 
-### Core Libraries & Packages
+```powershell
+$env:NUTRISCAN_MODEL = "gemma4:e2b"
+.\.venv\Scripts\python.exe -m streamlit run code/app.py
+```
 
-| Library | Version / Spec | Purpose in NutriScan |
-| :--- | :--- | :--- |
-| **`streamlit`** | `>=1.35.0` | Interactive web dashboard, real-time plate logging, and macro visualizer. |
-| **`fastembed`** | `>=0.3.0` | Ultra-fast ONNX runtime semantic embeddings (`bge-small-en-v1.5`) for dietary cosine matching without PyTorch overhead. |
-| **`ollama`** | `>=0.2.0` | Local client interface to execute `qwen2.5:1.5b` for 2-step ingredient decomposition and edge reasoning. |
-| **`pandas`** | `>=2.2.0` | Dataset manipulation, ingestion, and preprocessing of the `MM-Food-100K` benchmark. |
-| **`numpy`** | `>=1.26.0` | Fast vector and array math operations for semantic similarity thresholds. |
-| **`plotly`** | `>=5.20.0` | Interactive client-side macronutrient split donut charts and daily intake visualizations. |
-| **`pillow`** (`PIL`) | `>=10.0.0` | Image ingestion, preprocessing, and rendering for multimodal plate auditing. |
-| **`sqlite3`** | *Standard Library* | Zero-RAM disk-based B-Tree indexing engine querying 100,000 recipes in `< 1ms`. |
-| **`requests`** | `>=2.31.0` | Optional upstream fallback client to seed and populate local grocery caches. |
+## App tabs
 
----
+- **Text food check**: enter a dish or ingredient and screen it against the category selected in the sidebar.
+- **Check a meal photo**: upload an image; the local vision model identifies foods and estimated portions, then the app checks the detected names against the selected category. There are no food-name text fields in this tab.
+- **Today's Intake Log**: view the session's saved entries and nutrition chart. The current dashboard log is held in Streamlit session state and resets when its session is cleared.
 
-## 📦 Installation & Setup
+Diet checks use `code/diet_guard.py` and `code/diet_rules.json`. The vision flow is `code/vision_pipeline.py` → `code/ai.py` → `code/gemma_vision.py`. A dish-name check cannot identify hidden ingredients or cross-contamination; verify ingredients with the restaurant or package label.
 
-### 1. Clone & Set Up Virtual Environment
+## Nutrition data
 
-```bash
-git clone <repo-url>
-cd Calorie-AI
-python3 -m venv cal
-source cal/bin/activate
+The dashboard looks for a root-level `food_data.db` with a `recipes` table, as produced by `code/build_food.py` or `code/build_food_db.py`. Without that optional dataset, it uses nutrition references from `code/diet_rules.json` when available and otherwise displays fallback estimates.
+
+`code/database.py` also provides a USDA Foundation Foods SQLite catalog at `data/nutriscan.db`, with the CLI in `code/nutrition.py` and reset helper in `code/reset_db.py`. It can import `FoodData_Central_foundation_food_json_2026-04-30.zip` placed one folder above the project. This USDA database helper is separate from the Streamlit dashboard's current `food_data.db` lookup.

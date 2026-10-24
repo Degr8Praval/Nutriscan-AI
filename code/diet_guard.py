@@ -17,10 +17,14 @@ except ImportError:
     OLLAMA_AVAILABLE = False
 
 try:
-    from embedding_classifier import SemanticDietClassifier
+    from .embedding_classifier import SemanticDietClassifier
     SEMANTIC_AVAILABLE = True
 except ImportError:
-    SEMANTIC_AVAILABLE = False
+    try:
+        from embedding_classifier import SemanticDietClassifier
+        SEMANTIC_AVAILABLE = True
+    except ImportError:
+        SEMANTIC_AVAILABLE = False
 
 
 @dataclass
@@ -38,8 +42,8 @@ class DietaryVerdict:
 
 
 class DietGuard:
-    def __init__(self, config_path: str = "diet_rules.json", model: str = "qwen2.5:1.5b"):
-        self.model = model
+    def __init__(self, config_path: str = "diet_rules.json", model: str | None = None):
+        self.model = model or os.getenv("NUTRISCAN_MODEL", "gemma4:e2b")
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.config_path = os.path.join(base_dir, config_path)
         
@@ -248,7 +252,11 @@ class DietGuard:
                 format="json",
                 options={"temperature": 0.0}
             )
-            raw = res["message"]["content"].strip()
+            message = getattr(res, "message", None)
+            raw = getattr(message, "content", None)
+            if raw is None:
+                raw = res["message"]["content"]
+            raw = raw.strip()
             raw = re.sub(r"^```(?:json)?\s*", "", raw)
             raw = re.sub(r"\s*```$", "", raw)
             data = json.loads(raw)
