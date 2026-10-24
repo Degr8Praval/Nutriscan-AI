@@ -12,12 +12,27 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-Start Ollama separately. The default image model is `gemma4:e2b`; set `NUTRISCAN_MODEL` to another installed vision-capable tag if needed. The default Ollama endpoint is `http://127.0.0.1:11434`; set `OLLAMA_HOST` if your service runs elsewhere.
+## Install Ollama and the AI models
+
+The Python requirements install the Ollama client, but they do **not** install Ollama itself or download its AI models. Install the [Ollama app for Windows](https://ollama.com/download/windows), open it, then use PowerShell to download both models used by this app:
+
+```powershell
+ollama pull gemma4:e2b
+ollama pull qwen2.5:1.5b
+ollama list
+```
+
+- **`gemma4:e2b`** analyzes meal photos and estimates visible foods and portions. It must be a vision-capable model. [Ollama model page](https://ollama.com/library/gemma4:e2b)
+- **`qwen2.5:1.5b`** is used by the dietary checker for its optional local language-model fallback. [Ollama model page](https://ollama.com/library/qwen2.5:1.5b)
+
+Keep Ollama running while using NutriScan. On Windows, the Ollama app normally starts its local service at `http://127.0.0.1:11434`. If your service uses another address, set `OLLAMA_HOST` to that address. The photo analyzer defaults to `gemma4:e2b`; if you installed another vision-capable model instead, set `NUTRISCAN_MODEL` to its exact tag before launching:
 
 ```powershell
 $env:NUTRISCAN_MODEL = "gemma4:e2b"
 .\.venv\Scripts\python.exe -m streamlit run code/app.py
 ```
+
+If Ollama is not running or the selected model has not been pulled, image analysis cannot start. The text checker can still use its local rules and fallback behavior.
 
 ## App tabs
 
