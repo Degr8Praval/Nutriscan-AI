@@ -231,18 +231,17 @@ class DietGuard:
             source="offline_fallback"
         )
 
-    def _query_llm_with_context(self, food_name: str, diet: str, diet_config: Dict[str, Any]) -> Optional[DietaryVerdict]:
+    def _query_llm_with_context(self, food_name: str, diet: str, diet_config: dict) -> Optional[DietaryVerdict]:
         """
-        Automated 2-Step Grounding:
-        Step 1: Ask LLM for the real core ingredients of the dish.
-        Step 2: Let Python programmatically screen those ingredients against the blacklist.
-        Eliminates JSON hallucination and boolean inversion on small models.
+        Asks LLM for components WITHOUT exposing forbidden keyword lists,
+        then deterministically verifies them in Python.
         """
-        # Step 1: Query for factual culinary ingredients
+        clean_name = food_name.lower().strip()
+
+        # Step 1: Prompt ONLY for factual ingredients (no negative examples)
         prompt = (
-            f"List the 3 to 6 primary ingredients traditionally used to make the dish '{food_name}'.\n"
-            f"Respond with valid JSON only in this exact format:\n"
-            f'{{"dish": "{food_name}", "ingredients": ["ingredient1", "ingredient2", "ingredient3"]}}'
+            f"List the 3 to 6 primary ingredients traditionally used to make '{food_name}'.\n"
+            f"Return JSON only: {{\"ingredients\": [\"ingredient1\", \"ingredient2\", \"ingredient3\"]}}"
         )
 
         try:
@@ -252,47 +251,39 @@ class DietGuard:
                 format="json",
                 options={"temperature": 0.0}
             )
-            message = getattr(res, "message", None)
-            raw = getattr(message, "content", None)
-            if raw is None:
-                raw = res["message"]["content"]
-            raw = raw.strip()
-            raw = re.sub(r"^```(?:json)?\s*", "", raw)
-            raw = re.sub(r"\s*```$", "", raw)
+            raw = res["message"]["content"].strip()
             data = json.loads(raw)
 
-            # Extracted components (e.g. for Poha: ["flattened rice", "onions", "mustard seeds", "turmeric"])
-            extracted_ingredients = [str(i).lower().strip() for i in data.get("ingredients", [])]
-            if not extracted_ingredients:
-                extracted_ingredients = [food_name.lower().strip()]
+            extracted = [str(item).lower().strip() for item in data.get("ingredients", [])]
+            if not extracted:
+                extracted = [clean_name]
 
             # Step 2: Deterministic verification in Python
             forbidden_keywords = diet_config.get("forbidden_keywords", [])
-            actual_flags = []
+            flagged = []
 
-            for ing in extracted_ingredients:
-                tokens = set(self._tokenize(ing))
+            for ing in extracted:
+                tokens = set(re.findall(r"\b\w+\b", ing))
                 for kw in forbidden_keywords:
+                    # Match exact words or compound phrases (e.g., 'fish sauce')
                     if kw in tokens or (" " in kw and kw in ing):
-                        actual_flags.append(kw)
+                        flagged.append(kw)
 
-            # Optional: check semantic embedding similarity on the extracted ingredients
-            if not actual_flags and self.semantic_engine is not None:
-                for ing in extracted_ingredients:
-                    safe, score, reason = self.semantic_engine.evaluate(ing, diet, threshold=0.74)
-                    if not safe:
-                        actual_flags.append(reason.split("'")[-2] if "'" in reason else ing)
+            # Defensive sanity check: If dish is explicitly prefixed 'vegetable/veggie',
+            # reject absurd animal hallucinations
+            if any(term in clean_name for term in ["vegetable", "veggie", "plant-based"]):
+                flagged = [f for f in flagged if f not in ["beef", "salmon", "fish", "chicken", "pork", "lamb"]]
 
-            actual_flags = list(set(actual_flags))
+            flagged = list(set(flagged))
 
-            if actual_flags:
+            if flagged:
                 return DietaryVerdict(
                     food=food_name,
                     diet=diet,
                     safe=False,
                     confidence=0.92,
-                    reason=f"Violates {diet} diet: contains {', '.join(actual_flags)}.",
-                    flagged_ingredients=actual_flags,
+                    reason=f"Violates {diet} diet: contains {', '.join(flagged)}.",
+                    flagged_ingredients=flagged,
                     source=f"local_llm ({self.model})"
                 )
             else:
@@ -300,19 +291,28 @@ class DietGuard:
                     food=food_name,
                     diet=diet,
                     safe=True,
-                    confidence=0.92,
-                    reason=f"Safe for {diet}. Made with: {', '.join(extracted_ingredients[:4])}.",
+                    confidence=0.95,
+                    reason=f"Safe for {diet}. Prepared with: {', '.join(extracted[:4])}.",
                     flagged_ingredients=[],
                     source=f"local_llm ({self.model})"
                 )
-
-        except Exception as e:
+        except Exception:
             return None
 
-    def evaluate_meal(self, items: List[Dict[str, Any]], diet: str) -> Dict[str, Any]:
-        verdicts = []
-        is_entire_meal_safe = True
-        all_flags = []
+        PLANT_EXCLUSIONS = {
+        "nut", "nuts", "peanut", "peanuts", "almond", "almonds", "walnut", "walnuts",
+        "cashew", "cashews", "pistachio", "pecan", "seed", "seeds", "chia", "flax",
+        "rice", "grain", "oat", "oats", "bean", "beans", "lentil", "lentils", "tofu"
+    }
+
+    def evaluate(self, food_item: str, diet: str, threshold: float = 0.82) -> tuple:
+        clean = food_item.lower().strip()
+        
+        # 1. If screening for vegetarian/vegan and the query is a recognized plant staple, skip meat similarity
+        if diet in ["vegetarian", "vegan"]:
+            tokens = set(re.findall(r"\b\w+\b", clean))
+            if tokens.intersection(PLANT_EXCLUSIONS):
+                return True, 0.0, "Recognized plant staple"
 
         for item in items:
             name = item.get("name", "Unknown item")
