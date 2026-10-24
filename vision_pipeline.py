@@ -105,11 +105,7 @@ def extract_json_block(text):
 
 
 # main func
-
 def extract_plate_items(image_path: str, retries: int = 2):
-    """
-    Takes an image path, returns a validated PlateExtraction object.
-    """
     last_error = None
 
     for attempt in range(retries + 1):
@@ -125,15 +121,16 @@ def extract_plate_items(image_path: str, retries: int = 2):
             )
             return result
 
-        except (json.JSONDecodeError, ValidationError, KeyError) as err:
+        # CHANGED: ValidationError -> TypeError
+        except (json.JSONDecodeError, TypeError, KeyError) as err:
             last_error = str(err)
             time.sleep(0.5)
             continue
 
-    # All retries failed
     return PlateExtraction(
         items=[],
         success=False,
         error_message=f"Failed to parse vision output after {retries + 1} attempts: {last_error}",
         raw_model_output=last_error
     )
+   
