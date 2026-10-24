@@ -1,87 +1,235 @@
 {
+    "_metadata": {
+      "version": "3.0.0",
+      "description": "Comprehensive Multi-Tier Dietary Knowledge Base covering global cuisines, safe alternatives, and edge-case dishes."
+    },
     "restrictions": {
       "vegetarian": {
-        "forbidden_categories": ["meat", "poultry", "seafood", "animal_byproducts"],
+        "forbidden_categories": ["poultry", "red_meat", "game", "seafood", "animal_fats_broths", "hidden_byproducts"],
         "forbidden_keywords": [
-          "chicken", "beef", "pork", "lamb", "mutton", "turkey", "duck", "bacon", 
-          "ham", "sausage", "pepperoni", "salami", "fish", "salmon", "tuna", 
-          "shrimp", "crab", "lobster", "gelatin", "lard", "tallow"
+          "chicken", "chicken breast", "chicken thigh", "chicken broth", "chicken stock", "turkey", "duck", "goose", "quail",
+          "beef", "ground beef", "steak", "sirloin", "beef broth", "beef stock", "pork", "pork belly", "bacon", "pancetta", 
+          "prosciutto", "ham", "sausage", "pepperoni", "salami", "chorizo", "lard", "tallow", "lamb", "mutton", "veal", "venison",
+          "fish", "salmon", "tuna", "cod", "tilapia", "trout", "halibut", "mackerel", "anchovy", "anchovies", "fish sauce",
+          "shrimp", "prawn", "prawns", "crab", "lobster", "crawfish", "calamari", "squid", "octopus", "clam", "mussel", "oyster",
+          "gelatin", "bonito", "dashi", "rennet", "animal shortening", "suet", "isinglass", "carmine", "cochineal"
         ]
       },
       "vegan": {
-        "forbidden_categories": ["meat", "poultry", "seafood", "dairy", "eggs", "animal_byproducts"],
+        "forbidden_categories": ["meat", "poultry", "seafood", "dairy", "eggs", "bee_products", "animal_byproducts"],
         "forbidden_keywords": [
-          "chicken", "beef", "pork", "fish", "shrimp", "milk", "cheese", "butter", 
-          "cream", "paneer", "ghee", "yogurt", "whey", "egg", "eggs", "mayo", 
-          "honey", "gelatin"
+          "chicken", "beef", "pork", "lamb", "turkey", "duck", "fish", "salmon", "tuna", "shrimp", "prawn", "crab", "lobster", 
+          "bacon", "ham", "sausage", "pepperoni", "gelatin", "lard", "tallow", "fish sauce", "anchovy", "dashi", "bone broth",
+          "milk", "whole milk", "dairy", "cream", "heavy cream", "whipping cream", "sour cream", "buttermilk", "butter", "ghee",
+          "clarified butter", "cheese", "cheddar", "mozzarella", "parmesan", "paneer", "ricotta", "feta", "brie", "gouda",
+          "yogurt", "curd", "dahi", "whey", "casein", "custard", "ice cream", "condensed milk", "milk powder",
+          "egg", "eggs", "egg yolk", "egg white", "mayo", "mayonnaise", "aioli", "meringue",
+          "honey", "royal jelly", "beeswax", "carmine", "cochineal", "shellac"
         ]
       },
       "gluten-free": {
-        "forbidden_categories": ["gluten_grains", "wheat_staples"],
+        "forbidden_categories": ["wheat_grains", "barley_rye", "traditional_pastas_breads", "flours_starches"],
         "forbidden_keywords": [
-          "wheat", "barley", "rye", "flour", "bread", "toast", "pasta", "noodle", 
-          "roti", "chapati", "naan", "paratha", "seitan", "semolina", "sooji", "atta"
+          "wheat", "barley", "rye", "spelt", "kamut", "triticale", "farro", "bulgur", "semolina", "sooji", "suji", "durum",
+          "flour", "all-purpose flour", "wheat flour", "bread flour", "cake flour", "atta", "maida", "graham flour",
+          "bread", "toast", "bagel", "croissant", "brioche", "pita", "baguette", "ciabatta", "breadcrumbs", "croutons",
+          "pasta", "spaghetti", "macaroni", "penne", "lasagna", "fettuccine", "linguine", "orzo", "ramen", "udon", "noodle", "noodles",
+          "roti", "chapati", "naan", "paratha", "puri", "bhatura", "kulcha", "seitan", "malt", "malt extract", "malt vinegar",
+          "soy sauce", "couscous", "phyllo", "puff pastry", "tortilla flour", "cracker", "crackers"
         ]
       },
       "dairy-free": {
-        "forbidden_categories": ["dairy"],
+        "forbidden_categories": ["mammal_milks", "cheeses", "butters", "creams", "derivatives"],
         "forbidden_keywords": [
-          "milk", "cheese", "butter", "cream", "paneer", "ghee", "yogurt", "curd", "whey"
+          "milk", "cow milk", "goat milk", "sheep milk", "dairy", "butter", "clarified butter", "ghee", "makhani",
+          "cream", "heavy cream", "whipping cream", "sour cream", "creme fraiche", "buttermilk", "half and half",
+          "cheese", "cheddar", "mozzarella", "parmesan", "parmigiano", "paneer", "ricotta", "feta", "goat cheese",
+          "provolone", "swiss cheese", "blue cheese", "brie", "camembert", "gouda", "pecorino", "cottage cheese",
+          "yogurt", "curd", "dahi", "raita", "whey", "whey protein", "casein", "caseinate", "lactose", "custard", "gelato"
         ]
       },
       "nut-free": {
-        "forbidden_categories": ["tree_nuts", "peanuts"],
+        "forbidden_categories": ["tree_nuts", "peanuts", "nut_butters_oils"],
         "forbidden_keywords": [
-          "almond", "walnut", "cashew", "pistachio", "pecan", "peanut", "peanut butter"
+          "peanut", "peanuts", "peanut butter", "peanut oil", "groundnut", "groundnuts",
+          "almond", "almonds", "almond flour", "almond meal", "almond butter", "almond milk",
+          "walnut", "walnuts", "cashew", "cashews", "cashew butter", "cashew milk", "cashew cream",
+          "pistachio", "pistachios", "pecan", "pecans", "hazelnut", "hazelnuts", "filbert", "macadamia",
+          "pine nut", "pine nuts", "pignoli", "brazil nut", "brazil nuts", "praline", "nougat", "marzipan", "gianduja"
         ]
       }
     },
     "safe_prefixes": {
       "dairy-free": [
-        "almond milk",
-        "soy milk",
-        "oat milk",
-        "coconut milk",
-        "cashew milk",
-        "vegan cheese",
-        "dairy-free cheese"
+        "almond milk", "soy milk", "oat milk", "coconut milk", "cashew milk", "rice milk", "hemp milk", "pea milk",
+        "vegan cheese", "dairy-free cheese", "plant butter", "coconut cream", "vegan yogurt", "oat yogurt", "soy yogurt",
+        "dairy-free", "non-dairy", "plant-based butter"
       ],
       "vegan": [
-        "almond milk",
-        "soy milk",
-        "oat milk",
-        "coconut milk",
-        "cashew milk",
-        "vegan cheese",
-        "egg-free"
+        "almond milk", "soy milk", "oat milk", "coconut milk", "cashew milk", "rice milk", "pea milk",
+        "vegan cheese", "plant butter", "tofu", "tempeh", "seitan", "plant-based meat", "impossible meat", 
+        "beyond meat", "vegan mayo", "egg-free", "egg replacement", "aquafaba", "nutritional yeast", "vegan"
       ],
       "gluten-free": [
-        "gluten-free",
-        "gluten free",
-        "gf "
+        "gluten-free", "gluten free", "gf ", "rice flour", "almond flour", "coconut flour", "tapioca flour",
+        "chickpea flour", "besan", "corn flour", "cornmeal", "corn tortilla", "rice noodles", "rice paper",
+        "tamari", "gluten-free oats", "quinoa", "buckwheat", "millet", "sorghum"
       ],
       "nut-free": [
-        "sunflower seed butter",
-        "sunflower butter",
-        "soy butter"
+        "sunflower seed butter", "sunflower butter", "sunbutter", "soy butter", "tahini", "sesame paste",
+        "pumpkin seed butter", "flaxseed", "chia seed", "hemp seed"
+      ],
+      "vegetarian": [
+        "plant-based", "impossible", "beyond", "veggie burger", "tofu", "tempeh", "paneer", "soy chunks", "nutrella"
       ]
     },
     "dish_overrides": {
-      "caesar salad": {
-        "vegetarian": {"safe": false, "reason": "Traditional Caesar dressing contains anchovies.", "flags": ["anchovies"]},
-        "vegan": {"safe": false, "reason": "Contains parmesan cheese and raw egg yolk in dressing.", "flags": ["parmesan", "egg"]}
+      "poha": {
+        "vegetarian": {"safe": true, "reason": "Traditional Indian dish made with flattened rice, onions, turmeric, and mustard seeds.", "flags": []},
+        "vegan": {"safe": true, "reason": "Plant-based beaten rice flakes sautéed with turmeric, mustard seeds, and vegetables.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Rice flakes are naturally gluten-free.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Prepared with vegetable oil, completely dairy-free.", "flags": []}
       },
-      "pad thai": {
-        "vegetarian": {"safe": false, "reason": "Traditionally cooked with fish sauce and dried shrimp.", "flags": ["fish sauce", "shrimp"]},
-        "vegan": {"safe": false, "reason": "Contains fish sauce and scrambled egg.", "flags": ["fish sauce", "egg"]}
+      "kanda poha": {
+        "vegetarian": {"safe": true, "reason": "Flattened rice cooked with sautéed onions, green chilies, and mild spices.", "flags": []},
+        "vegan": {"safe": true, "reason": "Flattened rice sautéed with onions and spices using cooking oil.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Flattened rice and onions contain no gluten.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Traditional preparation contains no dairy.", "flags": []}
+      },
+      "batata poha": {
+        "vegetarian": {"safe": true, "reason": "Flattened rice with potatoes and spices.", "flags": []},
+        "vegan": {"safe": true, "reason": "Plant-based flattened rice with diced potatoes.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Potatoes and flattened rice are naturally gluten-free.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Cooked with oil and mustard seeds, no dairy.", "flags": []}
+      },
+      "upma": {
+        "vegetarian": {"safe": true, "reason": "Savory porridge made from semolina or rava.", "flags": []},
+        "gluten-free": {"safe": false, "reason": "Upma is traditionally cooked with wheat semolina (rava/sooji).", "flags": ["semolina", "sooji"]},
+        "vegan": {"safe": true, "reason": "Typically tempered with oil, mustard seeds, and ginger (verify if ghee was added).", "flags": []}
+      },
+      "idli": {
+        "vegetarian": {"safe": true, "reason": "Steamed cakes made from fermented rice and black gram (urad dal).", "flags": []},
+        "vegan": {"safe": true, "reason": "Purely plant-based fermented rice and lentil batter.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Made purely from rice and urad lentils, naturally gluten-free.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Steamed lentil-rice preparation containing no dairy.", "flags": []}
+      },
+      "dosa": {
+        "vegetarian": {"safe": true, "reason": "Fermented crepe made from rice and black lentils.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Traditional dosa batter uses fermented rice and urad dal.", "flags": []},
+        "vegan": {"safe": true, "reason": "Plant-based fermented crepe cooked with vegetable oil (verify if ghee roast).", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Standard dosa batter is dairy-free unless fried in ghee.", "flags": []}
       },
       "paneer tikka": {
-        "vegan": {"safe": false, "reason": "Paneer is dairy cottage cheese.", "flags": ["paneer", "dairy"]},
-        "dairy-free": {"safe": false, "reason": "Paneer is dairy cheese.", "flags": ["paneer"]}
+        "vegetarian": {"safe": true, "reason": "Indian cottage cheese cubes marinated in spiced yogurt and grilled.", "flags": []},
+        "vegan": {"safe": false, "reason": "Paneer is made from curdled animal milk.", "flags": ["paneer", "dairy"]},
+        "dairy-free": {"safe": false, "reason": "Paneer is whole cow or buffalo milk cheese.", "flags": ["paneer"]}
+      },
+      "paneer butter masala": {
+        "vegetarian": {"safe": true, "reason": "Vegetarian curry made of cottage cheese in a rich tomato gravy.", "flags": []},
+        "vegan": {"safe": false, "reason": "Prepared with dairy paneer, heavy cream, and butter.", "flags": ["paneer", "butter", "cream"]},
+        "dairy-free": {"safe": false, "reason": "Contains paneer cheese, butter, and cream.", "flags": ["paneer", "butter", "cream"]}
       },
       "dal makhani": {
-        "vegan": {"safe": false, "reason": "Simmered with butter and heavy cream.", "flags": ["butter", "cream"]},
-        "dairy-free": {"safe": false, "reason": "Contains butter and heavy cream.", "flags": ["butter", "cream"]}
+        "vegetarian": {"safe": true, "reason": "Black lentils and kidney beans slow-cooked with spices.", "flags": []},
+        "vegan": {"safe": false, "reason": "Traditionally finished with generous amounts of dairy butter and heavy cream.", "flags": ["butter", "cream"]},
+        "dairy-free": {"safe": false, "reason": "Prepared with significant butter and heavy cream.", "flags": ["butter", "cream"]}
+      },
+      "rajma masala": {
+        "vegetarian": {"safe": true, "reason": "Red kidney beans simmered in a spiced onion-tomato gravy.", "flags": []},
+        "vegan": {"safe": true, "reason": "Kidney beans cooked in vegetable oil with fresh tomatoes, ginger, and garlic.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Kidney beans and tomato gravy contain no wheat or gluten.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Standard preparation uses plant cooking oils.", "flags": []}
+      },
+      "chana masala": {
+        "vegetarian": {"safe": true, "reason": "Chickpeas cooked in an onion, tomato, and aromatic spice gravy.", "flags": []},
+        "vegan": {"safe": true, "reason": "Made purely from chickpeas, tomatoes, onions, and whole spices.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Chickpeas and tomato gravy are naturally gluten-free.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Cooked in vegetable oil without milk or butter.", "flags": []}
+      },
+      "sambar": {
+        "vegetarian": {"safe": true, "reason": "Lentil and vegetable stew with tamarind and sambar powder.", "flags": []},
+        "vegan": {"safe": true, "reason": "Toor dal and mixed vegetables cooked with tamarind and herbs.", "flags": []},
+        "gluten-free": {"safe": false, "reason": "Commercial sambar powders frequently contain asafoetida (hing) compounded with wheat flour.", "flags": ["compounded hing", "wheat"]},
+        "dairy-free": {"safe": true, "reason": "Stewed legumes and vegetables with zero dairy.", "flags": []}
+      },
+      "falafel": {
+        "vegetarian": {"safe": true, "reason": "Deep-fried fritters made of ground chickpeas, herbs, and spices.", "flags": []},
+        "vegan": {"safe": true, "reason": "Made entirely of chickpeas, parsley, onions, garlic, and coriander.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Chickpea patties fried in vegetable oil, dairy-free.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Traditional falafel contains no wheat flour (verify cross-contamination with fryers).", "flags": []}
+      },
+      "hummus": {
+        "vegetarian": {"safe": true, "reason": "Pureed chickpeas, tahini sesame paste, lemon juice, and garlic.", "flags": []},
+        "vegan": {"safe": true, "reason": "Chickpeas, tahini, olive oil, and garlic.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Chickpea dip contains no gluten (watch out for pita bread served alongside).", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Tahini and olive oil based dip with no dairy products.", "flags": []},
+        "nut-free": {"safe": true, "reason": "Contains sesame seeds (tahini), but free of tree nuts and peanuts.", "flags": []}
+      },
+      "pad thai": {
+        "vegetarian": {"safe": false, "reason": "Authentic Pad Thai noodles are cooked with fish sauce and dried shrimp.", "flags": ["fish sauce", "shrimp"]},
+        "vegan": {"safe": false, "reason": "Contains fish sauce, dried shrimp, and scrambled eggs.", "flags": ["fish sauce", "shrimp", "egg"]}
+      },
+      "caesar salad": {
+        "vegetarian": {"safe": false, "reason": "Authentic Caesar salad dressing contains blended anchovy fillets.", "flags": ["anchovies"]},
+        "vegan": {"safe": false, "reason": "Dressing contains raw egg yolks, parmesan cheese, and blended anchovies.", "flags": ["anchovies", "egg", "parmesan"]}
+      },
+      "miso soup": {
+        "vegetarian": {"safe": false, "reason": "Traditional Japanese miso broth is prepared with dashi made from bonito (fish flakes).", "flags": ["bonito", "dashi", "fish"]},
+        "vegan": {"safe": false, "reason": "Dashi base is derived from dried fish flakes (bonito).", "flags": ["bonito", "dashi"]}
+      },
+      "french fries": {
+        "vegetarian": {"safe": true, "reason": "Potatoes fried in vegetable oil.", "flags": []},
+        "vegan": {"safe": true, "reason": "Sliced potatoes seasoned with salt (verify if fried in beef tallow or shared fryer).", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Potatoes are naturally gluten-free unless dredged in wheat flour.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Pure potato preparation with no dairy.", "flags": []}
+      },
+      "guacamole": {
+        "vegetarian": {"safe": true, "reason": "Mashed avocado, lime, cilantro, onions, and jalapeños.", "flags": []},
+        "vegan": {"safe": true, "reason": "Purely fruit and vegetable based dip.", "flags": []},
+        "gluten-free": {"safe": true, "reason": "Avocado, citrus, and herbs are naturally gluten-free.", "flags": []},
+        "dairy-free": {"safe": true, "reason": "Made without sour cream or milk.", "flags": []}
       }
+    },
+    "nutrition_reference": {
+      "poha": {"calories": 160.0, "protein": 3.0, "carbs": 28.0, "fat": 4.0},
+      "kanda poha": {"calories": 170.0, "protein": 3.5, "carbs": 29.0, "fat": 4.5},
+      "batata poha": {"calories": 185.0, "protein": 3.2, "carbs": 33.0, "fat": 4.8},
+      "steamed basmati rice": {"calories": 121.0, "protein": 3.5, "carbs": 25.2, "fat": 0.4},
+      "steamed jasmine rice": {"calories": 129.0, "protein": 2.4, "carbs": 28.6, "fat": 0.2},
+      "white rice": {"calories": 130.0, "protein": 2.7, "carbs": 28.2, "fat": 0.3},
+      "brown rice": {"calories": 111.0, "protein": 2.6, "carbs": 23.0, "fat": 0.9},
+      "quinoa": {"calories": 120.0, "protein": 4.4, "carbs": 21.3, "fat": 1.9},
+      "grilled chicken breast": {"calories": 165.0, "protein": 31.0, "carbs": 0.0, "fat": 3.6},
+      "ground beef 85/15": {"calories": 250.0, "protein": 26.0, "carbs": 0.0, "fat": 17.0},
+      "atlantic salmon fillet": {"calories": 208.0, "protein": 20.0, "carbs": 0.0, "fat": 13.0},
+      "boiled egg": {"calories": 155.0, "protein": 12.6, "carbs": 1.1, "fat": 10.6},
+      "firm tofu": {"calories": 83.0, "protein": 10.0, "carbs": 2.3, "fat": 5.3},
+      "tempeh": {"calories": 192.0, "protein": 20.3, "carbs": 7.6, "fat": 10.8},
+      "paneer": {"calories": 296.0, "protein": 18.3, "carbs": 3.4, "fat": 23.0},
+      "paneer butter masala": {"calories": 230.0, "protein": 7.8, "carbs": 9.5, "fat": 18.0},
+      "paneer tikka": {"calories": 210.0, "protein": 14.0, "carbs": 6.0, "fat": 14.0},
+      "dal makhani": {"calories": 175.0, "protein": 5.8, "carbs": 16.5, "fat": 9.8},
+      "rajma masala": {"calories": 127.0, "protein": 8.7, "carbs": 22.8, "fat": 0.5},
+      "chana masala": {"calories": 138.0, "protein": 7.0, "carbs": 20.0, "fat": 3.5},
+      "yellow dal tadka": {"calories": 118.0, "protein": 6.5, "carbs": 17.0, "fat": 3.0},
+      "boiled black beans": {"calories": 132.0, "protein": 8.9, "carbs": 23.7, "fat": 0.5},
+      "boiled chickpeas": {"calories": 164.0, "protein": 8.9, "carbs": 27.4, "fat": 2.6},
+      "steamed broccoli": {"calories": 35.0, "protein": 2.4, "carbs": 7.2, "fat": 0.4},
+      "boiled edamame": {"calories": 121.0, "protein": 11.9, "carbs": 8.9, "fat": 5.2},
+      "whole wheat roti": {"calories": 297.0, "protein": 9.0, "carbs": 50.0, "fat": 7.0},
+      "chapati": {"calories": 275.0, "protein": 8.5, "carbs": 48.0, "fat": 5.5},
+      "garlic naan": {"calories": 310.0, "protein": 8.5, "carbs": 52.0, "fat": 7.5},
+      "plain paratha": {"calories": 320.0, "protein": 6.5, "carbs": 45.0, "fat": 13.0},
+      "idli": {"calories": 135.0, "protein": 4.5, "carbs": 28.0, "fat": 0.5},
+      "plain dosa": {"calories": 168.0, "protein": 3.8, "carbs": 29.0, "fat": 4.0},
+      "falafel": {"calories": 333.0, "protein": 13.3, "carbs": 31.8, "fat": 17.8},
+      "hummus": {"calories": 166.0, "protein": 7.9, "carbs": 14.3, "fat": 9.6},
+      "guacamole": {"calories": 150.0, "protein": 2.0, "carbs": 9.0, "fat": 13.0},
+      "french fries": {"calories": 312.0, "protein": 3.4, "carbs": 41.0, "fat": 15.0},
+      "pad thai": {"calories": 188.0, "protein": 7.5, "carbs": 26.0, "fat": 6.2},
+      "caesar salad": {"calories": 190.0, "protein": 5.5, "carbs": 8.0, "fat": 15.0},
+      "unsweetened almond milk": {"calories": 15.0, "protein": 0.6, "carbs": 0.3, "fat": 1.2},
+      "soy milk": {"calories": 43.0, "protein": 3.3, "carbs": 3.6, "fat": 1.8},
+      "creamy peanut butter": {"calories": 588.0, "protein": 25.1, "carbs": 20.0, "fat": 50.4}
     }
   }

@@ -228,13 +228,17 @@ class DietGuard:
         )
 
     def _query_llm_with_context(self, food_name: str, diet: str, diet_config: Dict[str, Any]) -> Optional[DietaryVerdict]:
-        forbidden_list = ", ".join(diet_config.get("forbidden_keywords", [])[:15])
-
+        """
+        Automated 2-Step Grounding:
+        Step 1: Ask LLM for the real core ingredients of the dish.
+        Step 2: Let Python programmatically screen those ingredients against the blacklist.
+        Eliminates JSON hallucination and boolean inversion on small models.
+        """
+        # Step 1: Query for factual culinary ingredients
         prompt = (
-            f"You are a strict dietary nutritionist. Assess if '{food_name}' is safe for a {diet} diet.\n"
-            f"Forbidden in {diet}: [{forbidden_list}].\n"
-            f"Provide valid JSON with your determination:\n"
-            f'{{"safe": true, "confidence": 0.95, "reason": "brief reason", "flagged_ingredients": []}}'
+            f"List the 3 to 6 primary ingredients traditionally used to make the dish '{food_name}'.\n"
+            f"Respond with valid JSON only in this exact format:\n"
+            f'{{"dish": "{food_name}", "ingredients": ["ingredient1", "ingredient2", "ingredient3"]}}'
         )
 
         try:
@@ -249,16 +253,52 @@ class DietGuard:
             raw = re.sub(r"\s*```$", "", raw)
             data = json.loads(raw)
 
-            return DietaryVerdict(
-                food=food_name,
-                diet=diet,
-                safe=bool(data.get("safe", True)),
-                confidence=float(data.get("confidence", 0.85)),
-                reason=str(data.get("reason", "Evaluated by local model.")),
-                flagged_ingredients=list(data.get("flagged_ingredients", [])),
-                source=f"local_llm ({self.model})"
-            )
-        except Exception:
+            # Extracted components (e.g. for Poha: ["flattened rice", "onions", "mustard seeds", "turmeric"])
+            extracted_ingredients = [str(i).lower().strip() for i in data.get("ingredients", [])]
+            if not extracted_ingredients:
+                extracted_ingredients = [food_name.lower().strip()]
+
+            # Step 2: Deterministic verification in Python
+            forbidden_keywords = diet_config.get("forbidden_keywords", [])
+            actual_flags = []
+
+            for ing in extracted_ingredients:
+                tokens = set(self._tokenize(ing))
+                for kw in forbidden_keywords:
+                    if kw in tokens or (" " in kw and kw in ing):
+                        actual_flags.append(kw)
+
+            # Optional: check semantic embedding similarity on the extracted ingredients
+            if not actual_flags and self.semantic_engine is not None:
+                for ing in extracted_ingredients:
+                    safe, score, reason = self.semantic_engine.evaluate(ing, diet, threshold=0.74)
+                    if not safe:
+                        actual_flags.append(reason.split("'")[-2] if "'" in reason else ing)
+
+            actual_flags = list(set(actual_flags))
+
+            if actual_flags:
+                return DietaryVerdict(
+                    food=food_name,
+                    diet=diet,
+                    safe=False,
+                    confidence=0.92,
+                    reason=f"Violates {diet} diet: contains {', '.join(actual_flags)}.",
+                    flagged_ingredients=actual_flags,
+                    source=f"local_llm ({self.model})"
+                )
+            else:
+                return DietaryVerdict(
+                    food=food_name,
+                    diet=diet,
+                    safe=True,
+                    confidence=0.92,
+                    reason=f"Safe for {diet}. Made with: {', '.join(extracted_ingredients[:4])}.",
+                    flagged_ingredients=[],
+                    source=f"local_llm ({self.model})"
+                )
+
+        except Exception as e:
             return None
 
     def evaluate_meal(self, items: List[Dict[str, Any]], diet: str) -> Dict[str, Any]:
