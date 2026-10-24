@@ -1,0 +1,87 @@
+{
+    "restrictions": {
+      "vegetarian": {
+        "forbidden_categories": ["meat", "poultry", "seafood", "animal_byproducts"],
+        "forbidden_keywords": [
+          "chicken", "beef", "pork", "lamb", "mutton", "turkey", "duck", "bacon", 
+          "ham", "sausage", "pepperoni", "salami", "fish", "salmon", "tuna", 
+          "shrimp", "crab", "lobster", "gelatin", "lard", "tallow"
+        ]
+      },
+      "vegan": {
+        "forbidden_categories": ["meat", "poultry", "seafood", "dairy", "eggs", "animal_byproducts"],
+        "forbidden_keywords": [
+          "chicken", "beef", "pork", "fish", "shrimp", "milk", "cheese", "butter", 
+          "cream", "paneer", "ghee", "yogurt", "whey", "egg", "eggs", "mayo", 
+          "honey", "gelatin"
+        ]
+      },
+      "gluten-free": {
+        "forbidden_categories": ["gluten_grains", "wheat_staples"],
+        "forbidden_keywords": [
+          "wheat", "barley", "rye", "flour", "bread", "toast", "pasta", "noodle", 
+          "roti", "chapati", "naan", "paratha", "seitan", "semolina", "sooji", "atta"
+        ]
+      },
+      "dairy-free": {
+        "forbidden_categories": ["dairy"],
+        "forbidden_keywords": [
+          "milk", "cheese", "butter", "cream", "paneer", "ghee", "yogurt", "curd", "whey"
+        ]
+      },
+      "nut-free": {
+        "forbidden_categories": ["tree_nuts", "peanuts"],
+        "forbidden_keywords": [
+          "almond", "walnut", "cashew", "pistachio", "pecan", "peanut", "peanut butter"
+        ]
+      }
+    },
+    "safe_prefixes": {
+      "dairy-free": [
+        "almond milk",
+        "soy milk",
+        "oat milk",
+        "coconut milk",
+        "cashew milk",
+        "vegan cheese",
+        "dairy-free cheese"
+      ],
+      "vegan": [
+        "almond milk",
+        "soy milk",
+        "oat milk",
+        "coconut milk",
+        "cashew milk",
+        "vegan cheese",
+        "egg-free"
+      ],
+      "gluten-free": [
+        "gluten-free",
+        "gluten free",
+        "gf "
+      ],
+      "nut-free": [
+        "sunflower seed butter",
+        "sunflower butter",
+        "soy butter"
+      ]
+    },
+    "dish_overrides": {
+      "caesar salad": {
+        "vegetarian": {"safe": false, "reason": "Traditional Caesar dressing contains anchovies.", "flags": ["anchovies"]},
+        "vegan": {"safe": false, "reason": "Contains parmesan cheese and raw egg yolk in dressing.", "flags": ["parmesan", "egg"]}
+      },
+      "pad thai": {
+        "vegetarian": {"safe": false, "reason": "Traditionally cooked with fish sauce and dried shrimp.", "flags": ["fish sauce", "shrimp"]},
+        "vegan": {"safe": false, "reason": "Contains fish sauce and scrambled egg.", "flags": ["fish sauce", "egg"]}
+      },
+      "paneer tikka": {
+        "vegan": {"safe": false, "reason": "Paneer is dairy cottage cheese.", "flags": ["paneer", "dairy"]},
+        "dairy-free": {"safe": false, "reason": "Paneer is dairy cheese.", "flags": ["paneer"]}
+      },
+      "dal makhani": {
+        "vegan": {"safe": false, "reason": "Simmered with butter and heavy cream.", "flags": ["butter", "cream"]},
+        "dairy-free": {"safe": false, "reason": "Contains butter and heavy cream.", "flags": ["butter", "cream"]}
+      }
+    }
+  }
